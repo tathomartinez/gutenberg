@@ -1,6 +1,6 @@
 {
   "name": "gunterberg",
-  "version": "1.0.1-alpha",
+  "version": "1.0.2-alpha",
   "private": true,
   "description": "App desktop from logcat",
   "main": "./dist/main.js",
