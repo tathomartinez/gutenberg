@@ -1,27 +1,31 @@
+import React, { useState, useEffect } from "react";
 import {
-  TextField,
-  Button,
   Stack,
   FormControl,
   InputLabel,
-  MenuItem,
   Select,
+  MenuItem,
+  Button,
+  TextField,
   SelectChangeEvent,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import Adb, { Device } from "@devicefarmer/adbkit";
-
 import SearchIcon from "@mui/icons-material/Search";
-import { EventEmitter } from "stream";
+import Adb, { Device } from "@devicefarmer/adbkit"; // Asume que adb es importado correctamente
+import EventEmitter from "events";
 
-let content = "";
-
-export default function FormLogs({ log }: { log(content: string): void }) {
+export default function FormLogs({
+  log,
+}: {
+  log(logs: Array<{ priority: number; message: string }>): void;
+}) {
   const [tag, setTag] = useState("Neil");
   const [device, setDevice] = useState("");
-  const [deviceList, setDeviceList] = useState(["Oliver Hansen"]); // Ahora names es un estado
+  const [deviceList, setDeviceList] = useState([""]);
+  const isPriorityValidate = (priority: number) => {
+    priority == 6
+    return false}
 
-  const handleChange = (event: SelectChangeEvent) => {
+  const handleChange = (event: SelectChangeEvent<string>) => {
     setDevice(event.target.value as string);
   };
 
@@ -33,8 +37,9 @@ export default function FormLogs({ log }: { log(content: string): void }) {
         const deviceChose = await client.getDevice(device);
         deviceChose.openLogcat({ clear: true }).then((logcat: EventEmitter) => {
           logcat.on("entry", (entry) => {
-            if (entry.tag === tag) {
-              log((content += entry.message + "\n"));
+            const newLog = { priority: entry.priority, message: entry.message };
+            if (isPriorityValidate(entry.priority) || !tag || entry.tag === tag) {
+              log([newLog]);
             }
           });
         });
@@ -42,12 +47,14 @@ export default function FormLogs({ log }: { log(content: string): void }) {
         console.error("Something went wrong:", err);
       }
     };
-    log("");
+    log([]);
     subscribeToLogcat();
   }, [tag, device]);
 
+  
+
   const handleTagChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTag(event.target.value); // Actualiza el estado con la nueva etiqueta
+    setTag(event.target.value);
   };
 
   const listarDevices = () => {
@@ -64,11 +71,9 @@ export default function FormLogs({ log }: { log(content: string): void }) {
     };
     listClient();
   };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    content = "";
-    log("");
+    log([]);
     setTag(tag);
   };
 
@@ -76,12 +81,20 @@ export default function FormLogs({ log }: { log(content: string): void }) {
     <form onSubmit={handleSubmit}>
       <Stack direction="column" spacing={2}>
         <FormControl fullWidth>
+          <Button
+            variant="outlined"
+            onClick={listarDevices}
+            startIcon={<SearchIcon />}
+          >
+            Listar devices
+          </Button>
           <InputLabel id="demo-simple-select-label">Devices</InputLabel>
           <Select
             labelId="demo-simple-select-label"
             id="demo-simple-select"
             value={device}
             label="Device"
+            placeholder="Select a device"
             onChange={handleChange}
           >
             {deviceList.map((device) => {
@@ -92,13 +105,6 @@ export default function FormLogs({ log }: { log(content: string): void }) {
               );
             })}
           </Select>
-          <Button
-            variant="outlined"
-            onClick={listarDevices}
-            startIcon={<SearchIcon />}
-          >
-            Listar devices
-          </Button>
         </FormControl>
         <TextField
           id="outlined-basic"
@@ -114,18 +120,3 @@ export default function FormLogs({ log }: { log(content: string): void }) {
     </form>
   );
 }
-
-// No es necesario realizar ninguna acción aquí, ya que los registros se están leyendo en useEffect
-
-// const client = Adb.createClient();
-// const test = async () => {
-//     try {
-//         const tracker = await client.trackDevices();
-//         tracker.on('add', (device: { id: any; }) => console.log('Device %s was plugged in', device.id));
-//         tracker.on('remove', (device: { id: any; }) => console.log('Device %s was unplugged', device.id));
-//         tracker.on('end', () => console.log('Tracking stopped'));
-//     } catch (err) {
-//         console.error('Something went wrong:', err);
-//     }
-// };
-// await test()

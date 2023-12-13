@@ -11,21 +11,28 @@ import Form from "./form/FormLog";
 import LogContainer from "./log/container/LogContainer";
 
 export default function App(): JSX.Element {
-  const [content, setContent] = useState("Hola Mundo");
-  const addLog = (content: string) => {
-    setContent(content);
+  const [content, setContent] = useState( Array<{ priority: number, message: string }>);
+
+  const addLog = (
+    newLogs: Array<{ priority: number, message: string }>
+  ) => {
+    setContent(prevContent => [...prevContent, ...newLogs]);
   };
 
-  const { ipcRenderer } = window.require('electron');
-  const [appVersion, setAppVersion] = useState('');
+  const cleanLog = () => {
+    setContent([]);
+  };
+
+  const { ipcRenderer } = window.require("electron");
+  const [appVersion, setAppVersion] = useState("");
 
   useEffect(() => {
-    ipcRenderer.invoke('get-app-version').then((version) => {
+    ipcRenderer.invoke("get-app-version").then((version) => {
       setAppVersion(version);
     });
   }, []);
 
-  const name = 'Gutenberg';
+  const name = "Gutenberg";
 
   return (
     <ThemeProvider theme={theme}>
@@ -38,10 +45,14 @@ export default function App(): JSX.Element {
         <main>
           {
             <Container maxWidth="sm">
-              <Typography variant="h2" align="center">{name}</Typography>
-              <Typography variant="h6" align="center">{appVersion}</Typography>
+              <Typography variant="h2" align="center">
+                {name}
+              </Typography>
+              <Typography variant="h6" align="center">
+                {appVersion}
+              </Typography>
               <Form log={addLog} />
-              <LogContainer content={content} />
+              <LogContainer content={content} cleanLog={cleanLog}/>
             </Container>
           }
         </main>
